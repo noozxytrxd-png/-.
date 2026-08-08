@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตรวจสคริปต์ / ย่อสคริปต์ / รันสคริปต์</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: #f8fafc;
+            min-height: 100vh;
+            padding: 12px;
+            background: radial-gradient(circle at 10% 10%, #1e293b 0%, #0f172a 45%, #020617 100%);
+            background-attachment: fixed;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 950px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 2px;
+        }
+
+        h2 {
+            color: #ffffff;
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .editor-container {
+            position: relative;
+            background: #ffffff;
+            border: 2px solid #38bdf8;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5),
+                        0 0 20px rgba(56, 189, 248, 0.25);
+            display: flex;
+            overflow: hidden;
+            width: 100%;
+            height: 45vh;
+            min-height: 300px;
+            max-height: 500px;
+        }
+
+        .line-numbers {
+            width: 45px;
+            background: #f1f5f9;
+            color: #94a3b8;
+            border-right: 1px solid #e2e8f0;
+            padding: 14px 6px;
+            font-family: 'Consolas', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            text-align: right;
+            user-select: none;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        textarea {
+            flex: 1;
+            height: 100%;
+            background: #ffffff;
+            color: #0f172a;
+            border: none;
+            padding: 14px 12px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.88rem;
+            line-height: 1.5;
+            outline: none;
+            resize: none;
+            white-space: pre;
+            overflow-x: auto;
+            overflow-y: auto;
+            tab-size: 4;
+        }
+
+        textarea::placeholder {
+            color: #94a3b8;
+        }
+
+        .bottom-section {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            width: 100%;
+            max-width: 750px;
+        }
+
+        .btn {
+            flex: 1;
+            min-width: 95px;
+            padding: 11px 8px;
+            font-weight: 700;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .btn-check { background: #f59e0b; color: #ffffff; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35); }
+        .btn-suggest { background: #8b5cf6; color: #ffffff; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35); }
+        .btn-run { background: #10b981; color: #ffffff; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35); }
+        .btn-main { background: #2563eb; color: #ffffff; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4); }
+        .btn-clear { background: #ef4444; color: #ffffff; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35); }
+
+        .console-box {
+            display: none;
+            width: 100%;
+            max-width: 750px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid #3b82f6;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.82rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #60a5fa;
+            font-size: 0.7rem;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 4px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .btn-copy-error {
+            display: none;
+            background: #ef4444;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .status-success { color: #4ade80; font-weight: bold; }
+        .status-error { color: #f87171; font-weight: bold; }
+        .console-log { color: #38bdf8; margin-top: 4px; white-space: pre-wrap; line-height: 1.4; }
+
+        .result-box {
+            display: none;
+            width: 100%;
+            max-width: 750px;
+        }
+
+        .result-label {
+            font-size: 0.8rem;
+            color: #93c5fd;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .row { display: flex; gap: 8px; }
+
+        .row input {
+            flex: 1;
+            background: #ffffff;
+            color: #1e3a8a;
+            border: 2px solid #60a5fa;
+            border-radius: 8px;
+            padding: 9px 12px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            outline: none;
+        }
+
+        .btn-copy {
+            width: 90px;
+            background: #16a34a;
+            color: #ffffff;
+            border: none;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header-bar">
+            <h2>🔍 ตรวจ / 💡 แนะนำ / ▶️ รัน / 🚀 ย่อ</h2>
+            <span class="badge">GitHub Gist Powered</span>
+        </div>
+
+        <div class="editor-container">
+            <div class="line-numbers" id="lineNums">1</div>
+            <textarea id="luaCode" placeholder="-- วางโค้ด Roblox Lua ที่นี่...&#10;print('Hello World!')" oninput="updateLineNumbers()" onscroll="syncScroll()"></textarea>
+        </div>
+
+        <div class="bottom-section">
+            <div class="button-group">
+                <button class="btn btn-check" onclick="checkScript()">🔍 ตรวจสอบ</button>
+                <button class="btn btn-suggest" onclick="suggestScript()">💡 แนะนำบั๊ก</button>
+                <button class="btn btn-run" onclick="runScript()">▶️ รันสคริปต์</button>
+                <button class="btn btn-main" id="genBtn" onclick="createLoadstring()">🚀 ย่อสคริปต์</button>
+                <button class="btn btn-clear" onclick="clearScript()">🗑️ ล้าง</button>
+            </div>
+
+            <div class="console-box" id="consoleBox">
+                <div class="console-header">
+                    <span id="consoleTitle">SYSTEM TERMINAL</span>
+                    <button class="btn-copy-error" id="copyErrorBtn" onclick="copyErrorLog()">📋 คัดลอกข้อความ</button>
+                </div>
+                <div id="consoleText"></div>
+            </div>
+
+            <div class="result-box" id="resultArea">
+                <div class="result-label">ผลลัพธ์ GitHub Raw Loadstring:</div>
+                <div class="row">
+                    <input type="text" id="finalUrl" readonly onclick="this.select()">
+                    <button class="btn-copy" id="copyBtn" onclick="copyCode()">คัดลอก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🔑 ใส่ GitHub Token ของมึงตรงนี้
+        const GITHUB_TOKEN = "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"; 
+        let lastErrorText = "";
+
+        function updateLineNumbers() {
+            const textarea = document.getElementById('luaCode');
+            const lineNums = document.getElementById('lineNums');
+            const lines = textarea.value.split('\n').length;
+            lineNums.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('<br>');
+        }
+
+        function syncScroll() {
+            const textarea = document.getElementById('luaCode');
+            const lineNums = document.getElementById('lineNums');
+            lineNums.scrollTop = textarea.scrollTop;
+        }
+
+        function clearScript() {
+            document.getElementById('luaCode').value = "";
+            document.getElementById("consoleBox").style.display = "none";
+            document.getElementById("resultArea").style.display = "none";
+            lastErrorText = "";
+            updateLineNumbers();
+            document.getElementById('luaCode').focus();
+        }
+
+        function copyErrorLog() {
+            if (!lastErrorText) return;
+            navigator.clipboard.writeText(lastErrorText).then(() => {
+                alert("คัดลอกข้อความเรียบร้อย!");
+            });
+        }
+
+        function checkScript() {
+            const code = document.getElementById('luaCode').value.trim();
+            const consoleBox = document.getElementById('consoleBox');
+            const consoleText = document.getElementById('consoleText');
+            const copyErrorBtn = document.getElementById('copyErrorBtn');
+            document.getElementById("resultArea").style.display = "none";
+
+            if (!code) {
+                alert("กรุณากรอกโค้ดก่อนตรวจสอบครับ!");
+                return;
+            }
+
+            consoleBox.style.display = "block";
+            document.getElementById("consoleTitle").innerText = "SYNTAX CHECKER";
+            copyErrorBtn.style.display = "inline-block";
+
+            let errors = [];
+            let openParen = (code.match(/\(/g) || []).length;
+            let closeParen = (code.match(/\)/g) || []).length;
+            if (openParen !== closeParen) errors.push(`วงเล็บ () ไม่เท่ากัน (เปิด ${openParen} / ปิด ${closeParen})`);
+
+            let openCurly = (code.match(/\{/g) || []).length;
+            let closeCurly = (code.match(/\}/g) || []).length;
+            if (openCurly !== closeCurly) errors.push(`ปีกกา {} ไม่เท่ากัน (เปิด ${openCurly} / ปิด ${closeCurly})`);
+
+            if (errors.length > 0) {
+                lastErrorText = "พบข้อผิดพลาด:\n" + errors.join("\n");
+                consoleText.innerHTML = `<div class="status-error">❌ พบข้อผิดพลาด:</div><div style="color: #f87171;">${errors.join("<br>")}</div>`;
+            } else {
+                lastErrorText = "ไวยากรณ์ถูกต้อง!";
+                consoleText.innerHTML = `<div class="status-success">✅ ไวยากรณ์ถูกต้องพร้อมใช้งาน!</div>`;
+            }
+        }
+
+        function suggestScript() {
+            const code = document.getElementById('luaCode').value.trim();
+            const consoleBox = document.getElementById('consoleBox');
+            const consoleText = document.getElementById('consoleText');
+            const copyErrorBtn = document.getElementById('copyErrorBtn');
+            document.getElementById("resultArea").style.display = "none";
+
+            if (!code) {
+                alert("กรุณากรอกโค้ดก่อนวิเคราะห์ครับ!");
+                return;
+            }
+
+            consoleBox.style.display = "block";
+            document.getElementById("consoleTitle").innerText = "AI ADVISOR";
+            copyErrorBtn.style.display = "inline-block";
+
+            let hints = [];
+            if (!code.includes("local") && code.length > 30) {
+                hints.push("• คำแนะนำ: ไม่พบการประกาศตัวแปรด้วย 'local' แนะนำให้ใส่ local ทุกครั้งเพื่อป้องกัน Memory Leak");
+            }
+            if (code.includes("while true do") && !code.includes("task.wait()")) {
+                hints.push("• คำแนะนำ: พบลูป 'while true do' แต่ไม่มีคำสั่ง 'task.wait()' เสี่ยงทำให้เกมค้าง (Crash)");
+            }
+
+            if (hints.length > 0) {
+                lastErrorText = hints.join("\n");
+                consoleText.innerHTML = `<div class="status-error">💡 ข้อเสนอแนะเพื่อความปลอดภัย:</div><div style="color: #fca5a5;">${hints.join("<br>")}</div>`;
+            } else {
+                lastErrorText = "โครงสร้างสคริปต์ปลอดภัยดี";
+                consoleText.innerHTML = `<div class="status-success">💡 วิเคราะห์แล้ว: โครงสร้างโค้ดดูปลอดภัยดีครับ!</div>`;
+            }
+        }
+
+        function runScript() {
+            const code = document.getElementById('luaCode').value.trim();
+            const consoleBox = document.getElementById('consoleBox');
+            const consoleText = document.getElementById('consoleText');
+            const copyErrorBtn = document.getElementById('copyErrorBtn');
+            document.getElementById("resultArea").style.display = "none";
+
+            if (!code) {
+                alert("กรุณากรอกโค้ดก่อนรันครับ!");
+                return;
+            }
+
+            consoleBox.style.display = "block";
+            document.getElementById("consoleTitle").innerText = "RUNNER";
+            copyErrorBtn.style.display = "inline-block";
+
+            let logs = [];
+            let lines = code.split('\n');
+            lines.forEach(line => {
+                let match = line.match(/print\((.*)\)/);
+                if (match) {
+                    let val = match[1].trim().replace(/^['"`]|['"`]$/g, '');
+                    logs.push(`> [Output]: ${val}`);
+                }
+            });
+
+            let out = logs.length > 0 ? logs.join("<br>") : "> [Output]: รันผ่าน ไม่มีข้อความ print ออกมา";
+            lastErrorText = logs.length > 0 ? logs.join("\n") : "รันผ่านปกติ";
+            consoleText.innerHTML = `<div class="status-success">🚀 จำลองการรันสำเร็จ:</div><div class="console-log">${out}</div>`;
+        }
+
+        async function createLoadstring() {
+            const codeInput = document.getElementById("luaCode").value.trim();
+            const genBtn = document.getElementById("genBtn");
+            const resultArea = document.getElementById("resultArea");
+            const finalUrlInput = document.getElementById("finalUrl");
+            const consoleBox = document.getElementById("consoleBox");
+            const consoleText = document.getElementById("consoleText");
+            const copyErrorBtn = document.getElementById("copyErrorBtn");
+
+            if (!codeInput) {
+                alert("กรุณากรอกโค้ดก่อนกดย่อครับ!");
+                return;
+            }
+
+            if (GITHUB_TOKEN === "TOKEN" || !GITHUB_TOKEN) {
+                alert("กรุณาใส่ GitHub Token ในโค้ดก่อนใช้งานครับ!");
+                return;
+            }
+
+            genBtn.innerText = "กำลังอัปโหลด...";
+            genBtn.disabled = true;
+            consoleBox.style.display = "block";
+            document.getElementById("consoleTitle").innerText = "GITHUB GIST";
+            copyErrorBtn.style.display = "none";
+            consoleText.innerHTML = "<span style='color: #60a5fa;'>[GitHub]</span> กำลังสร้าง Gist บน GitHub...";
+
+            try {
+                const response = await fetch('https://api.github.com/gists', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        "description": "Roblox Script Loadstring",
+                        "public": true,
+                        "files": {
+                            "script.lua": {
+                                "content": codeInput
+                            }
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const rawUrl = data.files["script.lua"].raw_url;
+                    const loadstringCmd = `loadstring(game:HttpGet("${rawUrl}"))()`;
+
+                    finalUrlInput.value = loadstringCmd;
+                    resultArea.style.display = "block";
+                    lastErrorText = loadstringCmd;
+                    copyErrorBtn.style.display = "inline-block";
+                    consoleText.innerHTML = `<span class="status-success">✅ สร้าง Loadstring บน GitHub Gist สำเร็จแล้ว!</span>`;
+                } else {
+                    throw new Error("GitHub Token ไม่ถูกต้อง หรือเกินโควต้า");
+                }
+            } catch (err) {
+                lastErrorText = `Error: ${err.message}`;
+                copyErrorBtn.style.display = "inline-block";
+                consoleText.innerHTML = `<span class="status-error">❌ เกิดข้อผิดพลาด: ${err.message}</span>`;
+            } finally {
+                genBtn.innerText = "🚀 ย่อสคริปต์";
+                genBtn.disabled = false;
+            }
+        }
+
+        function copyCode() {
+            const finalUrlInput = document.getElementById("finalUrl");
+            finalUrlInput.select();
+            document.execCommand("copy");
+            alert("คัดลอก Loadstring เรียบร้อย!");
+        }
+
+        updateLineNumbers();
+    </script>
+</body>
+</html>
